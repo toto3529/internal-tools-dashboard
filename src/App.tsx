@@ -1,8 +1,14 @@
+import { Routes, Route } from "react-router-dom"
+import Dashboard from "./pages/Dashboard"
+import Tools from "./pages/Tools"
+import Analytics from "./pages/Analytics"
+
 export default function App() {
 	return (
-		<div className="min-h-screen p-6">
-			<h1 className="text-2xl font-semibold">Tailwind OK</h1>
-			<p className="text-sm opacity-70">Si tu vois du padding et une typo plus propre, c’est bon.</p>
-		</div>
+		<Routes>
+			<Route path="/" element={<Dashboard />} />
+			<Route path="/tools" element={<Tools />} />
+			<Route path="/analytics" element={<Analytics />} />
+		</Routes>
 	)
 }
