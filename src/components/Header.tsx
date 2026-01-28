@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { NavLink, useLocation } from "react-router-dom"
 import { Bell, ChevronDown, Menu, Search, Settings, Sun, Zap } from "lucide-react"
+import { accents } from "../styles/accents"
 
 export default function Header() {
 	const location = useLocation()
@@ -39,7 +40,7 @@ export default function Header() {
 		<header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-zinc-950/80">
 			<div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
 				<div className="flex items-center gap-2">
-					<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600/90">
+					<div className={["flex h-9 w-9 items-center justify-center rounded-xl", accents.blue].join(" ")}>
 						<Zap className="h-5 w-5 text-white" />
 					</div>
 					<span className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white">TechCorp</span>
@@ -55,7 +56,13 @@ export default function Header() {
 					<NavLink to="/analytics" className={linkClass}>
 						Analytics
 					</NavLink>
-					<span className="rounded-lg px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">Settings</span>
+					<NavLink
+						to="/settings"
+						className="rounded-lg px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400 cursor-not-allowed opacity-80"
+						onClick={(e) => e.preventDefault()}
+					>
+						Settings
+					</NavLink>
 				</nav>
 
 				<div className="hidden lg:flex flex-1 justify-center">
@@ -75,6 +82,7 @@ export default function Header() {
 						type="button"
 						className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white"
 						aria-label="Toggle theme"
+						//TODO dark/light
 						onClick={() => {}}
 					>
 						<Sun className="h-5 w-5" />
@@ -133,7 +141,13 @@ export default function Header() {
 									Analytics
 								</NavLink>
 								<div className="my-1 h-px bg-zinc-200 dark:bg-white/10" />
-								<span className="rounded-lg px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">Settings</span>
+								<NavLink
+									to="/settings"
+									className="rounded-lg px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400 cursor-not-allowed opacity-80"
+									onClick={(e) => e.preventDefault()}
+								>
+									Settings
+								</NavLink>
 							</nav>
 						</div>
 					)}
