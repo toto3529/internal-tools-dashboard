@@ -14,6 +14,7 @@ type RecentToolRow = {
 	users: number
 	monthlyCost: number
 	status: ToolStatus
+	iconUrl?: string
 }
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -33,6 +34,7 @@ function mapToolToRow(t: Tool): RecentToolRow {
 		users: t.active_users_count ?? 0,
 		monthlyCost: typeof t.monthly_cost === "number" ? t.monthly_cost : 0,
 		status: t.status,
+		iconUrl: t.icon_url,
 	}
 }
 
@@ -266,7 +268,19 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 											<td className="px-6 py-4">
 												<div className="flex items-center gap-3">
 													<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
-														{/* future icon */}
+														{row.iconUrl ? (
+															<img
+																src={row.iconUrl}
+																alt={`${row.name} logo`}
+																className="h-5 w-5 object-contain"
+																loading="lazy"
+																onError={(e) => {
+																	e.currentTarget.style.display = "none"
+																}}
+															/>
+														) : (
+															<span className="text-xs text-white/40">—</span>
+														)}
 													</div>
 													<div className="min-w-0">
 														<div className="truncate font-medium text-white">{row.name}</div>

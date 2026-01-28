@@ -1,10 +1,12 @@
 const API_BASE_URL = "https://tt-jsonserver-01.alt-tools.tech"
 
-export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiGet<T>(path: string, init: RequestInit = {}): Promise<T> {
 	const res = await fetch(`${API_BASE_URL}${path}`, {
+		method: "GET",
 		...init,
 		headers: {
-			...(init?.headers ?? {}),
+			Accept: "application/json",
+			...init.headers,
 		},
 	})
 
