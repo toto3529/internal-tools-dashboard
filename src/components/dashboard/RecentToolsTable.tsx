@@ -6,6 +6,7 @@ import type { Tool } from "../../utils/types"
 import { useRecentTools } from "../../hooks/useRecentTools"
 import { formatEUR } from "../../utils/format"
 import TableStateRow from "../ui/TableStateRow"
+import ToolIcon from "../ui/ToolIcon"
 
 type ToolStatus = "active" | "expiring" | "unused"
 
@@ -245,21 +246,7 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 										<tr key={row.id} className="border-b border-white/10 hover:bg-white/5">
 											<td className="px-6 py-4">
 												<div className="flex items-center gap-3">
-													<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
-														{row.iconUrl ? (
-															<img
-																src={row.iconUrl}
-																alt={`${row.name} logo`}
-																className="h-5 w-5 object-contain"
-																loading="lazy"
-																onError={(e) => {
-																	e.currentTarget.style.display = "none"
-																}}
-															/>
-														) : (
-															<span className="text-xs text-white/40">—</span>
-														)}
-													</div>
+													<ToolIcon name={row.name} iconUrl={row.iconUrl} />
 													<div className="min-w-0">
 														<div className="truncate font-medium text-white">{row.name}</div>
 													</div>

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { Tool } from "../utils/types"
 import { formatEUR } from "../utils/format"
 import TableStateRow from "../components/ui/TableStateRow"
+import ToolIcon from "../components/ui/ToolIcon"
 
 type SortKey = "name" | "monthly_cost" | "active_users_count"
 type SortDir = "asc" | "desc"
@@ -115,22 +116,7 @@ export default function Tools() {
 								<div key={t.id} className="relative rounded-xl border border-white/10 bg-white/5 p-4">
 									<div className="flex items-start justify-between gap-3">
 										<div className="flex min-w-0 items-start gap-3">
-											<div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
-												{t.icon_url ? (
-													<img
-														src={t.icon_url}
-														alt={`${t.name} logo`}
-														className="h-5 w-5 object-contain"
-														loading="lazy"
-														onError={(e) => {
-															e.currentTarget.style.display = "none"
-														}}
-													/>
-												) : (
-													<span className="text-xs text-white/40">—</span>
-												)}
-											</div>
-
+											<ToolIcon name={t.name} iconUrl={t.icon_url} />
 											<div className="min-w-0">
 												<div className="truncate font-medium text-white">{t.name}</div>
 												<div className="mt-1 text-xs text-white/45">
@@ -254,21 +240,7 @@ export default function Tools() {
 										<tr key={t.id} className="border-b border-white/10 hover:bg-white/5">
 											<td className="px-6 py-4">
 												<div className="flex items-center gap-3">
-													<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
-														{t.icon_url ? (
-															<img
-																src={t.icon_url}
-																alt={`${t.name} logo`}
-																className="h-5 w-5 object-contain"
-																loading="lazy"
-																onError={(e) => {
-																	e.currentTarget.style.display = "none"
-																}}
-															/>
-														) : (
-															<span className="text-xs text-white/40">—</span>
-														)}
-													</div>
+													<ToolIcon name={t.name} iconUrl={t.icon_url} />
 													<div className="min-w-0">
 														<div className="truncate font-medium text-white">{t.name}</div>
 													</div>
