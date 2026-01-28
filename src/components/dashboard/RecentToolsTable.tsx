@@ -5,6 +5,7 @@ import { Calendar, MoreHorizontal } from "lucide-react"
 import type { Tool } from "../../utils/types"
 import { useRecentTools } from "../../hooks/useRecentTools"
 import { formatEUR } from "../../utils/format"
+import TableStateRow from "../ui/TableStateRow"
 
 type ToolStatus = "active" | "expiring" | "unused"
 
@@ -232,29 +233,11 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 					</thead>
 
 					<tbody>
-						{toolsState.status === "loading" ? (
-							<tr className="border-b border-white/10">
-								<td className="px-6 py-6 text-white/70" colSpan={6}>
-									Loading…
-								</td>
-							</tr>
-						) : null}
+						{toolsState.status === "loading" ? <TableStateRow colSpan={6}>Loading…</TableStateRow> : null}
 
-						{toolsState.status === "error" ? (
-							<tr className="border-b border-white/10">
-								<td className="px-6 py-6 text-white/70" colSpan={6}>
-									Error: {toolsState.error.message}
-								</td>
-							</tr>
-						) : null}
+						{toolsState.status === "error" ? <TableStateRow colSpan={6}>Error:</TableStateRow> : null}
 
-						{toolsState.status === "success" && pagedRows.length === 0 ? (
-							<tr className="border-b border-white/10">
-								<td className="px-6 py-6 text-white/70" colSpan={6}>
-									No tools found.
-								</td>
-							</tr>
-						) : null}
+						{toolsState.status === "success" && pagedRows.length === 0 ? <TableStateRow colSpan={6}>No tools found.</TableStateRow> : null}
 
 						{toolsState.status === "success"
 							? pagedRows.map((row) => {

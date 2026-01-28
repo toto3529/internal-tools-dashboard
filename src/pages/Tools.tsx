@@ -6,6 +6,7 @@ import { MoreHorizontal } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import type { Tool } from "../utils/types"
 import { formatEUR } from "../utils/format"
+import TableStateRow from "../components/ui/TableStateRow"
 
 type SortKey = "name" | "monthly_cost" | "active_users_count"
 type SortDir = "asc" | "desc"
@@ -242,29 +243,11 @@ export default function Tools() {
 						</thead>
 
 						<tbody>
-							{toolsQuery.isLoading ? (
-								<tr className="border-b border-white/10">
-									<td className="px-6 py-6 text-white/70" colSpan={7}>
-										Loading…
-									</td>
-								</tr>
-							) : null}
+							{toolsQuery.isLoading ? <TableStateRow colSpan={7}>Loading…</TableStateRow> : null}
 
-							{toolsQuery.isError ? (
-								<tr className="border-b border-white/10">
-									<td className="px-6 py-6 text-white/70" colSpan={7}>
-										Error: {toolsQuery.error.message}
-									</td>
-								</tr>
-							) : null}
+							{toolsQuery.isError ? <TableStateRow colSpan={7}>Error:</TableStateRow> : null}
 
-							{toolsQuery.isSuccess && pagedTools.length === 0 ? (
-								<tr className="border-b border-white/10">
-									<td className="px-6 py-6 text-white/70" colSpan={7}>
-										No tools found.
-									</td>
-								</tr>
-							) : null}
+							{toolsQuery.isSuccess && pagedTools.length === 0 ? <TableStateRow colSpan={7}>No tools found.</TableStateRow> : null}
 
 							{toolsQuery.isSuccess
 								? pagedTools.map((t) => (
