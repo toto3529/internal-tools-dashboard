@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { Card } from "../ui/Card"
 import StatusBadge from "../ui/StatusBadge"
-import { Calendar } from "lucide-react"
+import { Calendar, MoreHorizontal } from "lucide-react"
 
 type ToolStatus = "active" | "expiring" | "unused"
 
@@ -34,12 +34,13 @@ const currency = new Intl.NumberFormat("en-US", {
 type SortKey = "name" | "monthlyCost" | "users"
 type SortDir = "asc" | "desc"
 
-export default function RecentToolsTable() {
+export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: string }) {
 	const pageSize = 10
 	const [page, setPage] = useState(1)
 
 	const [sortKey, setSortKey] = useState<SortKey>("monthlyCost")
 	const [sortDir, setSortDir] = useState<SortDir>("desc")
+	const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
 	function toggleSort(key: SortKey) {
 		setPage(1)
@@ -53,8 +54,14 @@ export default function RecentToolsTable() {
 		})
 	}
 
+	const filteredRows = useMemo(() => {
+		const q = searchQuery.trim().toLowerCase()
+		if (!q) return rows
+		return rows.filter((r) => r.name.toLowerCase().includes(q) || r.department.toLowerCase().includes(q) || r.status.toLowerCase().includes(q))
+	}, [searchQuery])
+
 	const sortedRows = useMemo(() => {
-		const copy = [...rows]
+		const copy = [...filteredRows]
 		copy.sort((a, b) => {
 			let res = 0
 			if (sortKey === "name") res = a.name.localeCompare(b.name)
@@ -63,9 +70,10 @@ export default function RecentToolsTable() {
 			return sortDir === "asc" ? res : -res
 		})
 		return copy
-	}, [sortKey, sortDir])
+	}, [filteredRows, sortKey, sortDir])
 
-	const totalItems = 24 // <- plus tard tu remplaceras par data API (ex: total)
+	const totalItems = sortedRows.length
+
 	const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize))
 
 	const pagedRows = useMemo(() => {
@@ -132,6 +140,7 @@ export default function RecentToolsTable() {
 								</button>
 							</th>
 							<th className="px-6 py-3 font-medium">Status</th>
+							<th className="px-6 py-3 text-right font-medium">Actions</th>
 						</tr>
 					</thead>
 
@@ -154,6 +163,43 @@ export default function RecentToolsTable() {
 
 									<td className="px-6 py-4">
 										<StatusBadge status={row.status} />
+									</td>
+									<td className="relative px-6 py-4 text-right">
+										<button
+											type="button"
+											className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+											aria-label="Row actions"
+											aria-expanded={openMenuId === row.id}
+											onClick={() => setOpenMenuId((prev) => (prev === row.id ? null : row.id))}
+										>
+											<MoreHorizontal className="h-4 w-4" />
+										</button>
+
+										{openMenuId === row.id ? (
+											<div className="absolute right-6 top-[52px] z-10 w-36 rounded-xl border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur">
+												<button
+													type="button"
+													className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+													onClick={() => setOpenMenuId(null)}
+												>
+													View
+												</button>
+												<button
+													type="button"
+													className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+													onClick={() => setOpenMenuId(null)}
+												>
+													Edit
+												</button>
+												<button
+													type="button"
+													className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+													onClick={() => setOpenMenuId(null)}
+												>
+													Delete
+												</button>
+											</div>
+										) : null}
 									</td>
 								</tr>
 							)

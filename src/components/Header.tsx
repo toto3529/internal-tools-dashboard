@@ -3,13 +3,18 @@ import { NavLink, useLocation } from "react-router-dom"
 import { Bell, ChevronDown, Menu, Search, Settings, Sun, Zap } from "lucide-react"
 import { accents } from "../styles/accents"
 
-export default function Header() {
+type HeaderProps = {
+	query: string
+	onQueryChange: (v: string) => void
+}
+export default function Header({ query, onQueryChange }: HeaderProps) {
 	const location = useLocation()
-	const [query, setQuery] = useState("")
 	const [mobileOpen, setMobileOpen] = useState(false)
 	const notificationsCount = 1
 
 	const menuRef = useRef<HTMLDivElement | null>(null)
+	const [userMenuOpen, setUserMenuOpen] = useState(false)
+	const userMenuRef = useRef<HTMLDivElement | null>(null)
 
 	const searchPlaceholder = useMemo(() => {
 		if (location.pathname.startsWith("/tools")) return "Search in tools catalog..."
@@ -22,6 +27,9 @@ export default function Header() {
 			const target = e.target as Node
 			if (menuRef.current && !menuRef.current.contains(target)) {
 				setMobileOpen(false)
+			}
+			if (userMenuRef.current && !userMenuRef.current.contains(target)) {
+				setUserMenuOpen(false)
 			}
 		}
 		document.addEventListener("mousedown", onClickOutside)
@@ -70,7 +78,7 @@ export default function Header() {
 						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
 						<input
 							value={query}
-							onChange={(e) => setQuery(e.target.value)}
+							onChange={(e) => onQueryChange(e.target.value)}
 							placeholder={searchPlaceholder}
 							className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition focus:border-zinc-300 focus:bg-white dark:border-white/10 dark:bg-white/5 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-white/20 dark:focus:bg-white/10"
 						/>
@@ -106,15 +114,42 @@ export default function Header() {
 						<Settings className="h-5 w-5" />
 					</button>
 
-					<button
-						type="button"
-						className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white"
-						aria-label="User menu"
-						onClick={() => {}}
-					>
-						<div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-white/15" />
-						<ChevronDown className="h-4 w-4 text-zinc-400" />
-					</button>
+					<div className="relative" ref={userMenuRef}>
+						<button
+							type="button"
+							className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white"
+							aria-label="User menu"
+							aria-expanded={userMenuOpen}
+							onClick={() => setUserMenuOpen((v) => !v)}
+						>
+							<div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-white/15" />
+							<ChevronDown className="h-4 w-4 text-zinc-400" />
+						</button>
+
+						{userMenuOpen ? (
+							<div className="absolute right-0 top-11 z-50 w-48 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-white/10 dark:bg-zinc-950">
+								<button
+									className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/10"
+									onClick={() => setUserMenuOpen(false)}
+								>
+									Profile
+								</button>
+								<button
+									className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/10"
+									onClick={() => setUserMenuOpen(false)}
+								>
+									Settings
+								</button>
+								<div className="my-1 h-px bg-zinc-200 dark:bg-white/10" />
+								<button
+									className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/10"
+									onClick={() => setUserMenuOpen(false)}
+								>
+									Sign out
+								</button>
+							</div>
+						) : null}
+					</div>
 				</div>
 
 				<div className="relative ml-auto lg:hidden" ref={menuRef}>
