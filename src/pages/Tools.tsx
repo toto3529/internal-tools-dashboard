@@ -5,12 +5,7 @@ import StatusBadge from "../components/ui/StatusBadge"
 import { MoreHorizontal } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import type { Tool } from "../utils/types"
-
-const currency = new Intl.NumberFormat("en-US", {
-	style: "currency",
-	currency: "EUR",
-	maximumFractionDigits: 0,
-})
+import { formatEUR } from "../utils/format"
 
 type SortKey = "name" | "monthly_cost" | "active_users_count"
 type SortDir = "asc" | "desc"
@@ -193,7 +188,7 @@ export default function Tools() {
 										</div>
 										<div className="text-right">
 											<div className="text-xs text-white/45">Monthly Cost</div>
-											<div className="mt-0.5">{currency.format(t.monthly_cost ?? 0)}</div>
+											<div className="mt-0.5">{formatEUR(t.monthly_cost ?? 0)}</div>
 										</div>
 									</div>
 								</div>
@@ -300,7 +295,7 @@ export default function Tools() {
 											<td className="px-6 py-4 text-white/70">{t.category}</td>
 											<td className="px-6 py-4 text-white/70">{t.owner_department}</td>
 											<td className="px-6 py-4 text-white/70">{t.active_users_count ?? 0}</td>
-											<td className="px-6 py-4 text-white/70">{currency.format(t.monthly_cost ?? 0)}</td>
+											<td className="px-6 py-4 text-white/70">{formatEUR(t.monthly_cost ?? 0)}</td>
 
 											<td className="px-6 py-4">
 												<StatusBadge status={t.status} />
