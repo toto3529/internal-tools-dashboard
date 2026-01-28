@@ -2,6 +2,8 @@ import { useMemo, useState } from "react"
 import { Card } from "../ui/Card"
 import StatusBadge from "../ui/StatusBadge"
 import { Calendar, MoreHorizontal } from "lucide-react"
+import type { Tool } from "../../utils/types"
+import { useRecentTools } from "../../hooks/useRecentTools"
 
 type ToolStatus = "active" | "expiring" | "unused"
 
@@ -14,17 +16,6 @@ type RecentToolRow = {
 	status: ToolStatus
 }
 
-const rows: RecentToolRow[] = [
-	{ id: "1", name: "Figma", department: "Design", users: 24, monthlyCost: 1240, status: "active" },
-	{ id: "2", name: "Slack", department: "Operations", users: 56, monthlyCost: 980, status: "active" },
-	{ id: "3", name: "Notion", department: "Engineering", users: 41, monthlyCost: 760, status: "expiring" },
-	{ id: "4", name: "Jira", department: "Engineering", users: 38, monthlyCost: 690, status: "active" },
-	{ id: "5", name: "Miro", department: "Product", users: 19, monthlyCost: 410, status: "unused" },
-	{ id: "6", name: "GitHub", department: "Engineering", users: 44, monthlyCost: 1320, status: "active" },
-	{ id: "7", name: "Linear", department: "Product", users: 16, monthlyCost: 520, status: "expiring" },
-	{ id: "8", name: "Google Workspace", department: "Operations", users: 66, monthlyCost: 1580, status: "active" },
-]
-
 const currency = new Intl.NumberFormat("en-US", {
 	style: "currency",
 	currency: "EUR",
@@ -34,7 +25,19 @@ const currency = new Intl.NumberFormat("en-US", {
 type SortKey = "name" | "monthlyCost" | "users"
 type SortDir = "asc" | "desc"
 
+function mapToolToRow(t: Tool): RecentToolRow {
+	return {
+		id: String(t.id),
+		name: t.name,
+		department: t.owner_department,
+		users: t.active_users_count ?? 0,
+		monthlyCost: typeof t.monthly_cost === "number" ? t.monthly_cost : 0,
+		status: t.status,
+	}
+}
+
 export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: string }) {
+	const toolsState = useRecentTools(8)
 	const pageSize = 10
 	const [page, setPage] = useState(1)
 
@@ -54,11 +57,16 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 		})
 	}
 
+	const apiRows: RecentToolRow[] = useMemo(() => {
+		if (toolsState.status !== "success") return []
+		return toolsState.data.map(mapToolToRow)
+	}, [toolsState.status, toolsState.data])
+
 	const filteredRows = useMemo(() => {
 		const q = searchQuery.trim().toLowerCase()
-		if (!q) return rows
-		return rows.filter((r) => r.name.toLowerCase().includes(q) || r.department.toLowerCase().includes(q) || r.status.toLowerCase().includes(q))
-	}, [searchQuery])
+		if (!q) return apiRows
+		return apiRows.filter((r) => r.name.toLowerCase().includes(q) || r.department.toLowerCase().includes(q) || r.status.toLowerCase().includes(q))
+	}, [searchQuery, apiRows])
 
 	const sortedRows = useMemo(() => {
 		const copy = [...filteredRows]
@@ -73,7 +81,6 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 	}, [filteredRows, sortKey, sortDir])
 
 	const totalItems = sortedRows.length
-
 	const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize))
 
 	const pagedRows = useMemo(() => {
@@ -100,8 +107,91 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 				</button>
 			</div>
 
-			<div className="overflow-x-auto">
-				<table className="w-full min-w-[760px] text-left text-sm">
+			<div className="md:hidden space-y-3 px-4 py-4">
+				{toolsState.status === "loading" ? (
+					<div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">Loading…</div>
+				) : null}
+
+				{toolsState.status === "error" ? (
+					<div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">Error: {toolsState.error.message}</div>
+				) : null}
+
+				{toolsState.status === "success" && pagedRows.length === 0 ? (
+					<div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">No tools found.</div>
+				) : null}
+
+				{toolsState.status === "success"
+					? pagedRows.map((row) => (
+							<div key={row.id} className="relative rounded-xl border border-white/10 bg-white/5 p-4">
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0">
+										<div className="truncate font-medium text-white">{row.name}</div>
+										<div className="mt-1 text-xs text-white/45">{row.department}</div>
+									</div>
+
+									<div className="flex items-center gap-2">
+										<StatusBadge status={row.status} />
+
+										<div className="relative">
+											<button
+												type="button"
+												className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+												aria-label="Row actions"
+												aria-expanded={openMenuId === row.id}
+												onClick={() => setOpenMenuId((prev) => (prev === row.id ? null : row.id))}
+											>
+												<MoreHorizontal className="h-4 w-4" />
+											</button>
+
+											{openMenuId === row.id ? (
+												<div
+													className="absolute right-0 top-10 z-10 w-36 rounded-xl border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur"
+													onMouseLeave={() => setOpenMenuId(null)}
+												>
+													<button
+														type="button"
+														className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+														onClick={() => setOpenMenuId(null)}
+													>
+														View
+													</button>
+													<button
+														type="button"
+														className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+														onClick={() => setOpenMenuId(null)}
+													>
+														Edit
+													</button>
+													<button
+														type="button"
+														className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+														onClick={() => setOpenMenuId(null)}
+													>
+														Delete
+													</button>
+												</div>
+											) : null}
+										</div>
+									</div>
+								</div>
+
+								<div className="mt-3 grid grid-cols-2 gap-3 text-sm text-white/70">
+									<div>
+										<div className="text-xs text-white/45">Users</div>
+										<div className="mt-0.5">{row.users}</div>
+									</div>
+									<div className="text-right">
+										<div className="text-xs text-white/45">Monthly Cost</div>
+										<div className="mt-0.5">{currency.format(row.monthlyCost)}</div>
+									</div>
+								</div>
+							</div>
+						))
+					: null}
+			</div>
+
+			<div className="hidden md:block overflow-x-auto">
+				<table className="w-full min-w-3xl text-left text-sm">
 					<thead className="text-xs text-white/50">
 						<tr className="border-b border-white/10">
 							<th className="px-6 py-3 font-medium">
@@ -145,65 +235,93 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 					</thead>
 
 					<tbody>
-						{pagedRows.map((row) => {
-							return (
-								<tr key={row.id} className="border-b border-white/10 hover:bg-white/[0.04]">
-									<td className="px-6 py-4">
-										<div className="flex items-center gap-3">
-											<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">{/* future icon */}</div>
-											<div className="min-w-0">
-												<div className="truncate font-medium text-white">{row.name}</div>
-											</div>
-										</div>
-									</td>
+						{toolsState.status === "loading" ? (
+							<tr className="border-b border-white/10">
+								<td className="px-6 py-6 text-white/70" colSpan={6}>
+									Loading…
+								</td>
+							</tr>
+						) : null}
 
-									<td className="px-6 py-4 text-white/70">{row.department}</td>
-									<td className="px-6 py-4 text-white/70">{row.users}</td>
-									<td className="px-6 py-4 text-white/70">{currency.format(row.monthlyCost)}</td>
+						{toolsState.status === "error" ? (
+							<tr className="border-b border-white/10">
+								<td className="px-6 py-6 text-white/70" colSpan={6}>
+									Error: {toolsState.error.message}
+								</td>
+							</tr>
+						) : null}
 
-									<td className="px-6 py-4">
-										<StatusBadge status={row.status} />
-									</td>
-									<td className="relative px-6 py-4 text-right">
-										<button
-											type="button"
-											className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
-											aria-label="Row actions"
-											aria-expanded={openMenuId === row.id}
-											onClick={() => setOpenMenuId((prev) => (prev === row.id ? null : row.id))}
-										>
-											<MoreHorizontal className="h-4 w-4" />
-										</button>
+						{toolsState.status === "success" && pagedRows.length === 0 ? (
+							<tr className="border-b border-white/10">
+								<td className="px-6 py-6 text-white/70" colSpan={6}>
+									No tools found.
+								</td>
+							</tr>
+						) : null}
 
-										{openMenuId === row.id ? (
-											<div className="absolute right-6 top-[52px] z-10 w-36 rounded-xl border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur">
+						{toolsState.status === "success"
+							? pagedRows.map((row) => {
+									return (
+										<tr key={row.id} className="border-b border-white/10 hover:bg-white/5">
+											<td className="px-6 py-4">
+												<div className="flex items-center gap-3">
+													<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 ring-1 ring-white/10">
+														{/* future icon */}
+													</div>
+													<div className="min-w-0">
+														<div className="truncate font-medium text-white">{row.name}</div>
+													</div>
+												</div>
+											</td>
+
+											<td className="px-6 py-4 text-white/70">{row.department}</td>
+											<td className="px-6 py-4 text-white/70">{row.users}</td>
+											<td className="px-6 py-4 text-white/70">{currency.format(row.monthlyCost)}</td>
+
+											<td className="px-6 py-4">
+												<StatusBadge status={row.status} />
+											</td>
+											<td className="relative px-6 py-4 text-right">
 												<button
 													type="button"
-													className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
-													onClick={() => setOpenMenuId(null)}
+													className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+													aria-label="Row actions"
+													aria-expanded={openMenuId === row.id}
+													onClick={() => setOpenMenuId((prev) => (prev === row.id ? null : row.id))}
 												>
-													View
+													<MoreHorizontal className="h-4 w-4" />
 												</button>
-												<button
-													type="button"
-													className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
-													onClick={() => setOpenMenuId(null)}
-												>
-													Edit
-												</button>
-												<button
-													type="button"
-													className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
-													onClick={() => setOpenMenuId(null)}
-												>
-													Delete
-												</button>
-											</div>
-										) : null}
-									</td>
-								</tr>
-							)
-						})}
+
+												{openMenuId === row.id ? (
+													<div className="absolute right-6 top-14 z-10 w-36 rounded-xl border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur">
+														<button
+															type="button"
+															className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+															onClick={() => setOpenMenuId(null)}
+														>
+															View
+														</button>
+														<button
+															type="button"
+															className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+															onClick={() => setOpenMenuId(null)}
+														>
+															Edit
+														</button>
+														<button
+															type="button"
+															className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+															onClick={() => setOpenMenuId(null)}
+														>
+															Delete
+														</button>
+													</div>
+												) : null}
+											</td>
+										</tr>
+									)
+								})
+							: null}
 					</tbody>
 				</table>
 			</div>
