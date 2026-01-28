@@ -4,12 +4,7 @@ import RecentToolsTable from "../components/dashboard/RecentToolsTable"
 import { useOutletContext } from "react-router-dom"
 import { useAnalytics } from "../hooks/useAnalytics"
 import { useActiveToolsCount, useDepartmentsCount } from "../hooks/useCounts"
-
-const currency = new Intl.NumberFormat("en-US", {
-	style: "currency",
-	currency: "EUR",
-	maximumFractionDigits: 0,
-})
+import { formatEUR } from "../utils/format"
 
 export default function Dashboard() {
 	const { searchQuery } = useOutletContext<{ searchQuery: string }>()
@@ -31,7 +26,7 @@ export default function Dashboard() {
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 				<KpiCard
 					label="Monthly Budget"
-					value={analytics ? currency.format(analytics.budget_overview.current_month_total) : "—"}
+					value={analytics ? formatEUR(analytics.budget_overview.current_month_total) : "—"}
 					subValue={analytics ? `/€${Math.round(analytics.budget_overview.monthly_limit / 1000)}k` : undefined}
 					badgeText={analytics ? `${analytics.kpi_trends.budget_change}` : undefined}
 					variant="green"
