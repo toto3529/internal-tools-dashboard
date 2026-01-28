@@ -11,6 +11,7 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
 	const location = useLocation()
 	const [mobileOpen, setMobileOpen] = useState(false)
 	const notificationsCount = 1
+	const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
 
 	const menuRef = useRef<HTMLDivElement | null>(null)
 	const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -152,42 +153,73 @@ export default function Header({ query, onQueryChange }: HeaderProps) {
 					</div>
 				</div>
 
-				<div className="relative ml-auto lg:hidden" ref={menuRef}>
+				<div className="ml-auto flex items-center gap-2 lg:hidden">
 					<button
 						type="button"
 						className="inline-flex items-center justify-center rounded-full p-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white"
-						aria-label="Open navigation"
-						aria-expanded={mobileOpen}
-						onClick={() => setMobileOpen((v) => !v)}
+						aria-label="Open search"
+						aria-expanded={mobileSearchOpen}
+						onClick={() => {
+							setMobileOpen(false)
+							setMobileSearchOpen((v) => !v)
+						}}
 					>
-						<Menu className="h-5 w-5" />
+						<Search className="h-5 w-5" />
 					</button>
 
-					{mobileOpen && (
-						<div className="fixed right-4 top-16 mt-2 w-56 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg dark:border-white/10 dark:bg-zinc-950">
-							<nav className="flex flex-col gap-1">
-								<NavLink to="/" end className={linkClass} onClick={() => setMobileOpen(false)}>
-									Dashboard
-								</NavLink>
-								<NavLink to="/tools" className={linkClass} onClick={() => setMobileOpen(false)}>
-									Tools
-								</NavLink>
-								<NavLink to="/analytics" className={linkClass} onClick={() => setMobileOpen(false)}>
-									Analytics
-								</NavLink>
-								<div className="my-1 h-px bg-zinc-200 dark:bg-white/10" />
-								<NavLink
-									to="/settings"
-									className="rounded-lg px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400 cursor-not-allowed opacity-80"
-									onClick={(e) => e.preventDefault()}
-								>
-									Settings
-								</NavLink>
-							</nav>
-						</div>
-					)}
+					<div className="relative" ref={menuRef}>
+						<button
+							type="button"
+							className="inline-flex items-center justify-center rounded-full p-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white"
+							aria-label="Open navigation"
+							aria-expanded={mobileOpen}
+							onClick={() => {
+								setMobileSearchOpen(false)
+								setMobileOpen((v) => !v)
+							}}
+						>
+							<Menu className="h-5 w-5" />
+						</button>
+
+						{mobileOpen && (
+							<div className="fixed right-4 top-16 z-50 mt-2 w-56 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg dark:border-white/10 dark:bg-zinc-950">
+								<nav className="flex flex-col gap-1">
+									<NavLink to="/" end className={linkClass} onClick={() => setMobileOpen(false)}>
+										Dashboard
+									</NavLink>
+									<NavLink to="/tools" className={linkClass} onClick={() => setMobileOpen(false)}>
+										Tools
+									</NavLink>
+									<NavLink to="/analytics" className={linkClass} onClick={() => setMobileOpen(false)}>
+										Analytics
+									</NavLink>
+									<div className="my-1 h-px bg-zinc-200 dark:bg-white/10" />
+									<NavLink
+										to="/settings"
+										className="rounded-lg px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400 cursor-not-allowed opacity-80"
+										onClick={(e) => e.preventDefault()}
+									>
+										Settings
+									</NavLink>
+								</nav>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
+			{mobileSearchOpen ? (
+				<div className="border-t border-zinc-200 bg-white/80 px-4 py-3 backdrop-blur dark:border-white/10 dark:bg-zinc-950/80 lg:hidden">
+					<div className="relative">
+						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+						<input
+							value={query}
+							onChange={(e) => onQueryChange(e.target.value)}
+							placeholder={searchPlaceholder}
+							className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none transition focus:border-zinc-300 focus:bg-white dark:border-white/10 dark:bg-white/5 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-white/20 dark:focus:bg-white/10"
+						/>
+					</div>
+				</div>
+			) : null}
 		</header>
 	)
 }
