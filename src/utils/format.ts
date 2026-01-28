@@ -4,15 +4,15 @@ const eurFormatter = new Intl.NumberFormat("en-US", {
 	maximumFractionDigits: 0,
 })
 
-export function formatEUR(value: number): string {
-	return eurFormatter.format(value)
-}
-
 const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
 	year: "numeric",
 	month: "short",
 	day: "2-digit",
 })
+
+export function formatEUR(value: number): string {
+	return eurFormatter.format(value)
+}
 
 export function formatShortDate(iso: string | undefined): string {
 	if (!iso) return "—"

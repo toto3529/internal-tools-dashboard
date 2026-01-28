@@ -7,6 +7,7 @@ import { useRecentTools } from "../../hooks/useRecentTools"
 import { formatEUR } from "../../utils/format"
 import TableStateRow from "../ui/TableStateRow"
 import ToolIcon from "../ui/ToolIcon"
+import PaginationFooter from "../ui/PaginationFooter"
 
 type ToolStatus = "active" | "expiring" | "unused"
 
@@ -305,30 +306,15 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 				</table>
 			</div>
 
-			<div className="flex items-center justify-between gap-4 px-6 py-4">
-				<div className="text-xs text-white/45">
-					Showing {showingFrom}-{showingTo} of {totalItems} tools
-				</div>
-
-				<div className="flex items-center gap-2">
-					<button
-						type="button"
-						disabled={!canPrev}
-						onClick={() => setPage((p) => Math.max(1, p - 1))}
-						className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-					>
-						Previous
-					</button>
-					<button
-						type="button"
-						disabled={!canNext}
-						onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-						className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-					>
-						Next
-					</button>
-				</div>
-			</div>
+			<PaginationFooter
+				showingFrom={showingFrom}
+				showingTo={showingTo}
+				totalItems={totalItems}
+				canPrev={canPrev}
+				canNext={canNext}
+				onPrev={() => setPage((p) => Math.max(1, p - 1))}
+				onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+			/>
 		</Card>
 	)
 }
