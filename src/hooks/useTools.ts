@@ -8,6 +8,8 @@ export type ToolsQuery = {
 	order?: "asc" | "desc"
 	status?: ToolStatus
 	search?: string
+	department?: string
+	category?: string
 }
 
 function buildToolsPath(q: ToolsQuery): string {
@@ -15,7 +17,8 @@ function buildToolsPath(q: ToolsQuery): string {
 
 	if (q.status) params.set("status", q.status)
 	if (q.search && q.search.trim().length > 0) params.set("name_like", q.search.trim())
-
+	if (q.department && q.department.trim().length > 0) params.set("owner_department", q.department.trim())
+	if (q.category && q.category.trim().length > 0) params.set("category", q.category.trim())
 	if (q.sortBy) params.set("_sort", q.sortBy)
 	if (q.order) params.set("_order", q.order)
 	if (typeof q.limit === "number") params.set("_limit", String(q.limit))

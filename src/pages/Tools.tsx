@@ -4,11 +4,12 @@ import { useTools } from "../hooks/useTools"
 import StatusBadge from "../components/ui/StatusBadge"
 import { MoreHorizontal } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import type { Tool } from "../utils/types"
+import type { Tool, ToolStatus } from "../utils/types"
 import { formatEUR, formatShortDate } from "../utils/format"
 import TableStateRow from "../components/ui/TableStateRow"
 import ToolIcon from "../components/ui/ToolIcon"
 import PaginationFooter from "../components/ui/PaginationFooter"
+import { useDepartments } from "../hooks/useDepartments"
 
 type SortKey = "name" | "monthly_cost" | "active_users_count"
 type SortDir = "asc" | "desc"
@@ -27,7 +28,19 @@ function sortTools(tools: Tool[], key: SortKey, dir: SortDir): Tool[] {
 
 export default function Tools() {
 	const { searchQuery } = useOutletContext<{ searchQuery: string }>()
-	const toolsQuery = useTools()
+	const [statusFilter, setStatusFilter] = useState<"all" | ToolStatus>("all")
+	const [departmentFilter, setDepartmentFilter] = useState<string>("all")
+	const [categoryFilter, setCategoryFilter] = useState<string>("all")
+	const departmentsQuery = useDepartments()
+	const allToolsQuery = useTools()
+
+	const toolsQuery = useTools({
+		status: statusFilter === "all" ? undefined : statusFilter,
+		search: searchQuery,
+		department: departmentFilter === "all" ? undefined : departmentFilter,
+		category: categoryFilter === "all" ? undefined : categoryFilter,
+	})
+
 	const pageSize = 10
 	const [page, setPage] = useState(1)
 
@@ -49,26 +62,25 @@ export default function Tools() {
 	useEffect(() => {
 		setPage(1)
 		setOpenMenuId(null)
-	}, [searchQuery, sortKey, sortDir])
+	}, [searchQuery, sortKey, sortDir, statusFilter, departmentFilter, categoryFilter])
 
-	const filteredTools = useMemo(() => {
-		if (!toolsQuery.data) return []
-		const q = searchQuery.trim().toLowerCase()
-		if (!q) return toolsQuery.data
-
-		return toolsQuery.data.filter((t) => {
-			return (
-				t.name.toLowerCase().includes(q) ||
-				t.owner_department.toLowerCase().includes(q) ||
-				t.category.toLowerCase().includes(q) ||
-				t.status.toLowerCase().includes(q)
-			)
-		})
-	}, [toolsQuery.data, searchQuery])
+	const filteredTools = toolsQuery.data ?? []
 
 	const sortedTools = useMemo(() => {
 		return sortTools(filteredTools, sortKey, sortDir)
 	}, [filteredTools, sortKey, sortDir])
+
+	const departmentOptions = useMemo(() => {
+		const deps = departmentsQuery.data ?? []
+		return deps.map((d) => d.name).sort((a, b) => a.localeCompare(b))
+	}, [departmentsQuery.data])
+
+	const categoryOptions = useMemo(() => {
+		const tools = allToolsQuery.data ?? []
+		const set = new Set<string>()
+		for (const t of tools) set.add(t.category)
+		return Array.from(set).sort((a, b) => a.localeCompare(b))
+	}, [allToolsQuery.data])
 
 	const totalItems = sortedTools.length
 	const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
@@ -83,6 +95,7 @@ export default function Tools() {
 
 	const canPrev = page > 1
 	const canNext = page < totalPages
+	const DESKTOP_COLS = 9
 
 	return (
 		<div className="space-y-8">
@@ -92,16 +105,71 @@ export default function Tools() {
 			</div>
 
 			<Card className="p-0">
-				<div className="flex items-center justify-between gap-4 border-b border-white/10 px-6 py-4">
-					<div className="min-w-0">
+				<div className="flex items-start justify-between gap-6 border-b border-white/10 px-6 py-6">
+					<div className="min-w-0 space-y-4">
 						<div className="text-sm font-semibold text-white">Tools Catalog</div>
 						<div className="mt-1 text-xs text-white/45">
 							Search: <span className="text-white/70">{searchQuery || "All tools"}</span>
 						</div>
+						<div className="flex flex-wrap items-center gap-4">
+							<div className="flex items-center gap-2">
+								<label className="w-12 text-xs text-white/45">Status</label>
+								<select
+									className="min-w-28 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none hover:bg-white/10"
+									value={statusFilter}
+									onChange={(e) => setStatusFilter(e.target.value as "all" | ToolStatus)}
+								>
+									<option className="bg-zinc-950 text-white" value="all">
+										All
+									</option>
+									<option className="bg-zinc-950 text-white" value="active">
+										Active
+									</option>
+									<option className="bg-zinc-950 text-white" value="unused">
+										Unused
+									</option>
+									<option className="bg-zinc-950 text-white" value="expiring">
+										Expiring
+									</option>
+								</select>
+							</div>
+							<div className="flex items-center gap-2">
+								<label className="w-24 text-xs text-white/45">Department</label>
+								<select
+									className="min-w-40 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none hover:bg-white/10"
+									value={departmentFilter}
+									onChange={(e) => setDepartmentFilter(e.target.value)}
+								>
+									<option className="bg-zinc-950 text-white" value="all">
+										All
+									</option>
+									{departmentOptions.map((name) => (
+										<option key={name} className="bg-zinc-950 text-white" value={name}>
+											{name}
+										</option>
+									))}
+								</select>
+							</div>
+							<div className="flex items-center gap-2">
+								<label className="w-24 text-xs text-white/45">Category</label>
+								<select
+									className="min-w-40 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none hover:bg-white/10"
+									value={categoryFilter}
+									onChange={(e) => setCategoryFilter(e.target.value)}
+								>
+									<option className="bg-zinc-950 text-white" value="all">
+										All
+									</option>
+									{categoryOptions.map((name) => (
+										<option key={name} className="bg-zinc-950 text-white" value={name}>
+											{name}
+										</option>
+									))}
+								</select>
+							</div>
+						</div>
 					</div>
 				</div>
-
-				{/* Mobile: cards */}
 				<div className="md:hidden space-y-3 px-4 py-4">
 					{toolsQuery.isLoading ? <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">Loading…</div> : null}
 
@@ -126,10 +194,8 @@ export default function Tools() {
 												</div>
 											</div>
 										</div>
-
 										<div className="flex items-center gap-2">
 											<StatusBadge status={t.status} />
-
 											<div className="relative">
 												<button
 													type="button"
@@ -140,7 +206,6 @@ export default function Tools() {
 												>
 													<MoreHorizontal className="h-4 w-4" />
 												</button>
-
 												{openMenuId === t.id ? (
 													<div className="absolute right-0 top-10 z-10 w-36 rounded-xl border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur">
 														<button
@@ -169,7 +234,6 @@ export default function Tools() {
 											</div>
 										</div>
 									</div>
-
 									<div className="mt-3 grid grid-cols-2 gap-3 text-sm text-white/70">
 										<div>
 											<div className="text-xs text-white/45">Users</div>
@@ -184,8 +248,6 @@ export default function Tools() {
 							))
 						: null}
 				</div>
-
-				{/* Desktop+: table */}
 				<div className="hidden md:block overflow-x-auto">
 					<table className="w-full min-w-3xl text-left text-sm">
 						<thead className="text-xs text-white/50">
@@ -201,8 +263,7 @@ export default function Tools() {
 										{sortKey === "name" ? <span className="text-white/60">{sortDir === "asc" ? "↑" : "↓"}</span> : null}
 									</button>
 								</th>
-								<th className="px-6 py-3 font-medium">Description</th>
-								<th className="px-6 py-3 font-medium">Category</th>
+								<th className="px-6 py-3 font-medium">Status</th>
 								<th className="px-6 py-3 font-medium">Department</th>
 								<th className="px-6 py-3 font-medium">
 									<button
@@ -226,19 +287,16 @@ export default function Tools() {
 										{sortKey === "monthly_cost" ? <span className="text-white/60">{sortDir === "asc" ? "↑" : "↓"}</span> : null}
 									</button>
 								</th>
-								<th className="px-6 py-3 font-medium">Last update</th>
-								<th className="px-6 py-3 font-medium">Status</th>
+								<th className="px-6 py-3 font-medium">Category</th>
+								<th className="px-6 py-3 font-medium whitespace-nowrap">Last update</th>
+								<th className="px-6 py-3 font-medium">Description</th>
 								<th className="px-6 py-3 text-right font-medium">Actions</th>
 							</tr>
 						</thead>
-
 						<tbody>
-							{toolsQuery.isLoading ? <TableStateRow colSpan={7}>Loading…</TableStateRow> : null}
-
-							{toolsQuery.isError ? <TableStateRow colSpan={7}>Error:</TableStateRow> : null}
-
-							{toolsQuery.isSuccess && pagedTools.length === 0 ? <TableStateRow colSpan={7}>No tools found.</TableStateRow> : null}
-
+							{toolsQuery.isLoading ? <TableStateRow colSpan={DESKTOP_COLS}>Loading…</TableStateRow> : null}
+							{toolsQuery.isError ? <TableStateRow colSpan={DESKTOP_COLS}>Error: {toolsQuery.error.message}</TableStateRow> : null}
+							{toolsQuery.isSuccess && pagedTools.length === 0 ? <TableStateRow colSpan={DESKTOP_COLS}>No tools found.</TableStateRow> : null}
 							{toolsQuery.isSuccess
 								? pagedTools.map((t) => (
 										<tr key={t.id} className="border-b border-white/10 hover:bg-white/5">
@@ -250,19 +308,17 @@ export default function Tools() {
 													</div>
 												</div>
 											</td>
-											<td className="px-6 py-4 text-white/70">
-												<div className="max-w-sm truncate">{t.description}</div>
-											</td>
-											<td className="px-6 py-4 text-white/70">{t.category}</td>
-											<td className="px-6 py-4 text-white/70">{t.owner_department}</td>
-											<td className="px-6 py-4 text-white/70">{t.active_users_count ?? 0}</td>
-											<td className="px-6 py-4 text-white/70">{formatEUR(t.monthly_cost ?? 0)}</td>
-											<td className="px-6 py-4 text-white/70">{formatShortDate(t.updated_at)}</td>
-
 											<td className="px-6 py-4">
 												<StatusBadge status={t.status} />
 											</td>
-
+											<td className="px-6 py-4 text-white/70">{t.owner_department}</td>
+											<td className="px-6 py-4 text-white/70">{t.active_users_count ?? 0}</td>
+											<td className="px-6 py-4 text-white/70">{formatEUR(t.monthly_cost ?? 0)}</td>
+											<td className="px-6 py-4 text-white/70">{t.category}</td>
+											<td className="px-6 py-4 text-white/70 whitespace-nowrap min-w-32">{formatShortDate(t.updated_at)}</td>
+											<td className="px-6 py-4 text-white/70">
+												<div className="max-w-sm truncate">{t.description}</div>
+											</td>
 											<td className="relative px-6 py-4 text-right">
 												<button
 													type="button"

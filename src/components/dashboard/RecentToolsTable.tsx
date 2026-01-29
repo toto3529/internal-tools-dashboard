@@ -93,6 +93,7 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 
 	const canPrev = page > 1
 	const canNext = page < totalPages
+	const DESKTOP_COLS = 6
 
 	return (
 		<Card className="p-0">
@@ -235,11 +236,11 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 					</thead>
 
 					<tbody>
-						{toolsState.status === "loading" ? <TableStateRow colSpan={6}>Loading…</TableStateRow> : null}
+						{toolsState.status === "loading" ? <TableStateRow colSpan={DESKTOP_COLS}>Loading…</TableStateRow> : null}
 
-						{toolsState.status === "error" ? <TableStateRow colSpan={6}>Error:</TableStateRow> : null}
+						{toolsState.status === "error" ? <TableStateRow colSpan={DESKTOP_COLS}>Error:</TableStateRow> : null}
 
-						{toolsState.status === "success" && pagedRows.length === 0 ? <TableStateRow colSpan={6}>No tools found.</TableStateRow> : null}
+						{toolsState.status === "success" && pagedRows.length === 0 ? <TableStateRow colSpan={DESKTOP_COLS}>No tools found.</TableStateRow> : null}
 
 						{toolsState.status === "success"
 							? pagedRows.map((row) => {
