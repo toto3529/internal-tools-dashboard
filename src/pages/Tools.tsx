@@ -35,6 +35,7 @@ export default function Tools() {
 	const [categoryFilter, setCategoryFilter] = useState<string>("all")
 	const [minCost, setMinCost] = useState<string>("")
 	const [maxCost, setMaxCost] = useState<string>("")
+	const [selectedIds, setSelectedIds] = useState<number[]>([])
 	const departmentsQuery = useDepartments()
 	const allToolsQuery = useTools()
 
@@ -66,6 +67,16 @@ export default function Tools() {
 		},
 	})
 
+	const bulkStatusMutation = useMutation({
+		mutationFn: async (payload: { ids: number[]; status: ToolStatus }) => {
+			await Promise.all(payload.ids.map((id) => apiPatch<Tool>(`/tools/${id}`, { status: payload.status })))
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tools"] })
+			setSelectedIds([])
+		},
+	})
+
 	function toggleSort(key: SortKey) {
 		setSortKey((prevKey) => {
 			if (prevKey !== key) {
@@ -75,6 +86,19 @@ export default function Tools() {
 			setSortDir((prevDir) => (prevDir === "asc" ? "desc" : "asc"))
 			return prevKey
 		})
+	}
+
+	function toggleSelect(id: number) {
+		setOpenMenuId(null)
+		setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+	}
+
+	function isSelected(id: number) {
+		return selectedIds.includes(id)
+	}
+
+	function toggleSelectAll(ids: number[]) {
+		setSelectedIds((prev) => (prev.length === ids.length ? [] : ids))
 	}
 
 	useEffect(() => {
@@ -113,6 +137,9 @@ export default function Tools() {
 
 	const canPrev = page > 1
 	const canNext = page < totalPages
+	const isBulkPending = bulkStatusMutation.isPending
+	const allPageSelected = pagedTools.length > 0 && pagedTools.every((t) => selectedIds.includes(t.id))
+
 	const DESKTOP_COLS = 9
 
 	return (
@@ -215,6 +242,108 @@ export default function Tools() {
 						</div>
 					</div>
 				</div>
+				{/* Bulk actions slot — reserved space (desktop/tablet only) */}
+				<div className="hidden md:block h-[72px]">
+					<div
+						className={[
+							"flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-6 py-4 transition-all",
+							selectedIds.length > 0 ? "opacity-100" : "pointer-events-none opacity-0",
+						].join(" ")}
+					>
+						<div className="text-sm text-white/70">
+							<span className="font-medium text-white">{selectedIds.length}</span> selected
+							{isBulkPending ? <span className="ml-2 text-xs text-white/45">Updating…</span> : null}
+						</div>
+
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								disabled={isBulkPending}
+								className={[
+									"h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/80 hover:bg-white/10",
+									isBulkPending ? "cursor-not-allowed opacity-50 hover:bg-white/5" : "",
+								].join(" ")}
+								onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, status: "active" })}
+							>
+								Enable
+							</button>
+
+							<button
+								type="button"
+								disabled={isBulkPending}
+								className={[
+									"h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/80 hover:bg-white/10",
+									isBulkPending ? "cursor-not-allowed opacity-50 hover:bg-white/5" : "",
+								].join(" ")}
+								onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, status: "unused" })}
+							>
+								Disable
+							</button>
+
+							<button
+								type="button"
+								disabled={isBulkPending}
+								className={[
+									"h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/80 hover:bg-white/10",
+									isBulkPending ? "cursor-not-allowed opacity-50 hover:bg-white/5" : "",
+								].join(" ")}
+								onClick={() => setSelectedIds([])}
+							>
+								Clear
+							</button>
+						</div>
+					</div>
+				</div>
+				{/* Bulk actions (mobile) — inline, no reserved space */}
+				{selectedIds.length > 0 ? (
+					<div className="md:hidden border-b border-white/10 px-4 py-4">
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className="text-sm text-white/70">
+								<span className="font-medium text-white">{selectedIds.length}</span> selected
+								{isBulkPending ? <span className="ml-2 text-xs text-white/45">Updating…</span> : null}
+							</div>
+
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									disabled={isBulkPending}
+									className={[
+										"h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/80 hover:bg-white/10",
+										isBulkPending ? "cursor-not-allowed opacity-50 hover:bg-white/5" : "",
+									].join(" ")}
+									onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, status: "active" })}
+								>
+									Enable
+								</button>
+
+								<button
+									type="button"
+									disabled={isBulkPending}
+									className={[
+										"h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/80 hover:bg-white/10",
+										isBulkPending ? "cursor-not-allowed opacity-50 hover:bg-white/5" : "",
+									].join(" ")}
+									onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, status: "unused" })}
+								>
+									Disable
+								</button>
+
+								<button
+									type="button"
+									disabled={isBulkPending}
+									className={[
+										"h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white/80 hover:bg-white/10",
+										isBulkPending ? "cursor-not-allowed opacity-50 hover:bg-white/5" : "",
+									].join(" ")}
+									onClick={() => setSelectedIds([])}
+								>
+									Clear
+								</button>
+							</div>
+						</div>
+					</div>
+				) : null}
+
 				<div className="md:hidden space-y-3 px-4 py-4">
 					{toolsQuery.isLoading ? <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">Loading…</div> : null}
 
@@ -228,29 +357,42 @@ export default function Tools() {
 
 					{toolsQuery.isSuccess
 						? pagedTools.map((t) => (
-								<div key={t.id} className="relative rounded-xl border border-white/10 bg-white/5 p-4">
+								<div key={t.id} className="relative rounded-xl border border-white/10 bg-white/5 p-4 pl-12">
+									<label className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center">
+										<input
+											type="checkbox"
+											className="h-3.5 w-3.5 rounded border-white/20 bg-transparent text-white accent-white"
+											checked={selectedIds.includes(t.id)}
+											onChange={() => toggleSelect(t.id)}
+											aria-label={`Select ${t.name}`}
+										/>
+									</label>
 									<div className="flex items-start justify-between gap-3">
-										<div className="flex min-w-0 items-start gap-3">
-											<ToolIcon name={t.name} iconUrl={t.icon_url} />
+										<div className="flex min-w-0 items-start gap-2">
+											<div className="shrink-0 h-9 w-9 rounded-lg border border-white/10 bg-white/5 overflow-hidden flex items-center justify-center">
+												<ToolIcon name={t.name} iconUrl={t.icon_url} />
+											</div>
 											<div className="min-w-0">
 												<div className="truncate font-medium text-white">{t.name}</div>
-												<div className="mt-1 text-xs text-white/45">
+												<div className="mt-0.5 truncate text-xs text-white/45">
 													{t.category} • {t.owner_department}
 												</div>
 											</div>
 										</div>
 										<div className="flex items-center gap-2">
 											<StatusBadge status={t.status} />
+
 											<div className="relative">
 												<button
 													type="button"
-													className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+													className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
 													aria-label="Row actions"
 													aria-expanded={openMenuId === t.id}
 													onClick={() => setOpenMenuId((prev) => (prev === t.id ? null : t.id))}
 												>
-													<MoreHorizontal className="h-4 w-4" />
+													<MoreHorizontal className="h-3.5 w-3.5" />
 												</button>
+
 												{openMenuId === t.id ? (
 													<div className="absolute right-0 top-10 z-10 w-36 rounded-xl border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur">
 														<button
@@ -282,14 +424,14 @@ export default function Tools() {
 											</div>
 										</div>
 									</div>
-									<div className="mt-3 grid grid-cols-2 gap-3 text-sm text-white/70">
-										<div>
-											<div className="text-xs text-white/45">Users</div>
-											<div className="mt-0.5">{t.active_users_count ?? 0}</div>
+									<div className="mt-3 flex items-center justify-between text-sm text-white/70">
+										<div className="min-w-0 truncate">
+											<span className="text-xs text-white/45">Dept</span> <span className="text-white/70">{t.owner_department}</span>
 										</div>
-										<div className="text-right">
-											<div className="text-xs text-white/45">Monthly Cost</div>
-											<div className="mt-0.5">{formatEUR(t.monthly_cost ?? 0)}</div>
+
+										<div className="flex items-baseline gap-2 shrink-0">
+											<span className="text-xs text-white/45">Cost</span>
+											<span>{formatEUR(t.monthly_cost ?? 0)}</span>
 										</div>
 									</div>
 								</div>
@@ -301,15 +443,23 @@ export default function Tools() {
 						<thead className="text-xs text-white/50">
 							<tr className="border-b border-white/10">
 								<th className="px-6 py-3 font-medium">
-									<button
-										type="button"
-										onClick={() => toggleSort("name")}
-										className="inline-flex items-center gap-2 hover:text-white/80"
-										aria-label="Sort by tool name"
-									>
-										Tool
-										{sortKey === "name" ? <span className="text-white/60">{sortDir === "asc" ? "↑" : "↓"}</span> : null}
-									</button>
+									<div className="flex items-center gap-3">
+										<input
+											type="checkbox"
+											className="accent-white"
+											checked={allPageSelected}
+											onChange={() => toggleSelectAll(pagedTools.map((t) => t.id))}
+										/>
+										<button
+											type="button"
+											onClick={() => toggleSort("name")}
+											className="inline-flex items-center gap-2 hover:text-white/80"
+											aria-label="Sort by tool name"
+										>
+											Tool
+											{sortKey === "name" ? <span className="text-white/60">{sortDir === "asc" ? "↑" : "↓"}</span> : null}
+										</button>
+									</div>
 								</th>
 								<th className="px-6 py-3 font-medium">Status</th>
 								<th className="px-6 py-3 font-medium">Department</th>
@@ -352,9 +502,15 @@ export default function Tools() {
 										return (
 											<tr key={t.id} className="border-b border-white/10 hover:bg-white/5">
 												<td className="px-6 py-4">
-													<div className="flex items-center gap-3">
+													<div className="flex items-center gap-3 min-w-0">
+														<input
+															type="checkbox"
+															className="accent-white"
+															checked={selectedIds.includes(t.id)}
+															onChange={() => toggleSelect(t.id)}
+														/>
 														<ToolIcon name={t.name} iconUrl={t.icon_url} />
-														<div className="min-w-0">
+														<div className="min-w-0 max-w-[320px]">
 															<div className="truncate font-medium text-white">{t.name}</div>
 														</div>
 													</div>
