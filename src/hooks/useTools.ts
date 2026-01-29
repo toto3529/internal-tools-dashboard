@@ -10,6 +10,8 @@ export type ToolsQuery = {
 	search?: string
 	department?: string
 	category?: string
+	minCost?: number
+	maxCost?: number
 }
 
 function buildToolsPath(q: ToolsQuery): string {
@@ -19,6 +21,8 @@ function buildToolsPath(q: ToolsQuery): string {
 	if (q.search && q.search.trim().length > 0) params.set("name_like", q.search.trim())
 	if (q.department && q.department.trim().length > 0) params.set("owner_department", q.department.trim())
 	if (q.category && q.category.trim().length > 0) params.set("category", q.category.trim())
+	if (typeof q.minCost === "number") params.set("monthly_cost_gte", String(q.minCost))
+	if (typeof q.maxCost === "number") params.set("monthly_cost_lte", String(q.maxCost))
 	if (q.sortBy) params.set("_sort", q.sortBy)
 	if (q.order) params.set("_order", q.order)
 	if (typeof q.limit === "number") params.set("_limit", String(q.limit))

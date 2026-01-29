@@ -10,6 +10,8 @@ import TableStateRow from "../components/ui/TableStateRow"
 import ToolIcon from "../components/ui/ToolIcon"
 import PaginationFooter from "../components/ui/PaginationFooter"
 import { useDepartments } from "../hooks/useDepartments"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { apiPatch } from "../utils/api"
 
 type SortKey = "name" | "monthly_cost" | "active_users_count"
 type SortDir = "asc" | "desc"
@@ -31,6 +33,8 @@ export default function Tools() {
 	const [statusFilter, setStatusFilter] = useState<"all" | ToolStatus>("all")
 	const [departmentFilter, setDepartmentFilter] = useState<string>("all")
 	const [categoryFilter, setCategoryFilter] = useState<string>("all")
+	const [minCost, setMinCost] = useState<string>("")
+	const [maxCost, setMaxCost] = useState<string>("")
 	const departmentsQuery = useDepartments()
 	const allToolsQuery = useTools()
 
@@ -39,6 +43,8 @@ export default function Tools() {
 		search: searchQuery,
 		department: departmentFilter === "all" ? undefined : departmentFilter,
 		category: categoryFilter === "all" ? undefined : categoryFilter,
+		minCost: minCost.trim() ? Number(minCost) : undefined,
+		maxCost: maxCost.trim() ? Number(maxCost) : undefined,
 	})
 
 	const pageSize = 10
@@ -47,6 +53,18 @@ export default function Tools() {
 	const [sortKey, setSortKey] = useState<SortKey>("monthly_cost")
 	const [sortDir, setSortDir] = useState<SortDir>("desc")
 	const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+
+	const queryClient = useQueryClient()
+
+	const toggleStatusMutation = useMutation({
+		mutationFn: async (tool: Tool) => {
+			const nextStatus: ToolStatus = tool.status === "active" ? "unused" : "active"
+			return apiPatch<Tool>(`/tools/${tool.id}`, { status: nextStatus })
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tools"] })
+		},
+	})
 
 	function toggleSort(key: SortKey) {
 		setSortKey((prevKey) => {
@@ -62,7 +80,7 @@ export default function Tools() {
 	useEffect(() => {
 		setPage(1)
 		setOpenMenuId(null)
-	}, [searchQuery, sortKey, sortDir, statusFilter, departmentFilter, categoryFilter])
+	}, [searchQuery, sortKey, sortDir, statusFilter, departmentFilter, categoryFilter, minCost, maxCost])
 
 	const filteredTools = toolsQuery.data ?? []
 
@@ -111,9 +129,10 @@ export default function Tools() {
 						<div className="mt-1 text-xs text-white/45">
 							Search: <span className="text-white/70">{searchQuery || "All tools"}</span>
 						</div>
-						<div className="flex flex-wrap items-center gap-4">
-							<div className="flex items-center gap-2">
-								<label className="w-12 text-xs text-white/45">Status</label>
+						<div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+							{/* Status */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs text-white/45">Status</label>
 								<select
 									className="min-w-28 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none hover:bg-white/10"
 									value={statusFilter}
@@ -133,8 +152,10 @@ export default function Tools() {
 									</option>
 								</select>
 							</div>
-							<div className="flex items-center gap-2">
-								<label className="w-24 text-xs text-white/45">Department</label>
+
+							{/* Department */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs text-white/45">Department</label>
 								<select
 									className="min-w-40 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none hover:bg-white/10"
 									value={departmentFilter}
@@ -143,15 +164,17 @@ export default function Tools() {
 									<option className="bg-zinc-950 text-white" value="all">
 										All
 									</option>
-									{departmentOptions.map((name) => (
-										<option key={name} className="bg-zinc-950 text-white" value={name}>
-											{name}
+									{departmentOptions.map((d) => (
+										<option key={d} className="bg-zinc-950 text-white" value={d}>
+											{d}
 										</option>
 									))}
 								</select>
 							</div>
-							<div className="flex items-center gap-2">
-								<label className="w-24 text-xs text-white/45">Category</label>
+
+							{/* Category */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs text-white/45">Category</label>
 								<select
 									className="min-w-40 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none hover:bg-white/10"
 									value={categoryFilter}
@@ -160,12 +183,34 @@ export default function Tools() {
 									<option className="bg-zinc-950 text-white" value="all">
 										All
 									</option>
-									{categoryOptions.map((name) => (
-										<option key={name} className="bg-zinc-950 text-white" value={name}>
-											{name}
+									{categoryOptions.map((c) => (
+										<option key={c} className="bg-zinc-950 text-white" value={c}>
+											{c}
 										</option>
 									))}
 								</select>
+							</div>
+
+							{/* Cost range */}
+							<div className="flex flex-col gap-1">
+								<label className="text-xs text-white/45">Cost €</label>
+								<div className="flex items-center gap-2">
+									<input
+										className="w-20 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none placeholder:text-white/30"
+										placeholder="Min"
+										value={minCost}
+										onChange={(e) => setMinCost(e.target.value)}
+										inputMode="numeric"
+									/>
+									<span className="text-white/30">–</span>
+									<input
+										className="w-20 h-9 rounded-lg border border-white/10 bg-zinc-950 px-3 text-sm text-white/80 outline-none placeholder:text-white/30"
+										placeholder="Max"
+										value={maxCost}
+										onChange={(e) => setMaxCost(e.target.value)}
+										inputMode="numeric"
+									/>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -225,7 +270,10 @@ export default function Tools() {
 														<button
 															type="button"
 															className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
-															onClick={() => setOpenMenuId(null)}
+															onClick={() => {
+																toggleStatusMutation.mutate(t)
+																setOpenMenuId(null)
+															}}
 														>
 															Enable / Disable
 														</button>
@@ -248,7 +296,7 @@ export default function Tools() {
 							))
 						: null}
 				</div>
-				<div className="hidden md:block overflow-x-auto">
+				<div className="hidden md:block overflow-x-auto overflow-y-visible">
 					<table className="w-full min-w-3xl text-left text-sm">
 						<thead className="text-xs text-white/50">
 							<tr className="border-b border-white/10">
@@ -290,7 +338,7 @@ export default function Tools() {
 								<th className="px-6 py-3 font-medium">Category</th>
 								<th className="px-6 py-3 font-medium whitespace-nowrap">Last update</th>
 								<th className="px-6 py-3 font-medium">Description</th>
-								<th className="px-6 py-3 text-right font-medium">Actions</th>
+								<th className="sticky right-0 px-6 py-3 text-right font-medium bg-zinc-950">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -298,66 +346,77 @@ export default function Tools() {
 							{toolsQuery.isError ? <TableStateRow colSpan={DESKTOP_COLS}>Error: {toolsQuery.error.message}</TableStateRow> : null}
 							{toolsQuery.isSuccess && pagedTools.length === 0 ? <TableStateRow colSpan={DESKTOP_COLS}>No tools found.</TableStateRow> : null}
 							{toolsQuery.isSuccess
-								? pagedTools.map((t) => (
-										<tr key={t.id} className="border-b border-white/10 hover:bg-white/5">
-											<td className="px-6 py-4">
-												<div className="flex items-center gap-3">
-													<ToolIcon name={t.name} iconUrl={t.icon_url} />
-													<div className="min-w-0">
-														<div className="truncate font-medium text-white">{t.name}</div>
-													</div>
-												</div>
-											</td>
-											<td className="px-6 py-4">
-												<StatusBadge status={t.status} />
-											</td>
-											<td className="px-6 py-4 text-white/70">{t.owner_department}</td>
-											<td className="px-6 py-4 text-white/70">{t.active_users_count ?? 0}</td>
-											<td className="px-6 py-4 text-white/70">{formatEUR(t.monthly_cost ?? 0)}</td>
-											<td className="px-6 py-4 text-white/70">{t.category}</td>
-											<td className="px-6 py-4 text-white/70 whitespace-nowrap min-w-32">{formatShortDate(t.updated_at)}</td>
-											<td className="px-6 py-4 text-white/70">
-												<div className="max-w-sm truncate">{t.description}</div>
-											</td>
-											<td className="relative px-6 py-4 text-right">
-												<button
-													type="button"
-													className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
-													aria-label="Row actions"
-													aria-expanded={openMenuId === t.id}
-													onClick={() => setOpenMenuId((prev) => (prev === t.id ? null : t.id))}
-												>
-													<MoreHorizontal className="h-4 w-4" />
-												</button>
+								? pagedTools.map((t) => {
+										const isOpen = openMenuId === t.id
 
-												{openMenuId === t.id ? (
-													<div className="absolute right-6 top-14 z-10 w-36 rounded-xl border border-white/10 bg-black/80 p-1 shadow-lg backdrop-blur">
-														<button
-															type="button"
-															className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
-															onClick={() => setOpenMenuId(null)}
-														>
-															View
-														</button>
-														<button
-															type="button"
-															className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
-															onClick={() => setOpenMenuId(null)}
-														>
-															Edit
-														</button>
-														<button
-															type="button"
-															className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
-															onClick={() => setOpenMenuId(null)}
-														>
-															Enable / Disable
-														</button>
+										return (
+											<tr key={t.id} className="border-b border-white/10 hover:bg-white/5">
+												<td className="px-6 py-4">
+													<div className="flex items-center gap-3">
+														<ToolIcon name={t.name} iconUrl={t.icon_url} />
+														<div className="min-w-0">
+															<div className="truncate font-medium text-white">{t.name}</div>
+														</div>
 													</div>
-												) : null}
-											</td>
-										</tr>
-									))
+												</td>
+
+												<td className="px-6 py-4">
+													<StatusBadge status={t.status} />
+												</td>
+
+												<td className="px-6 py-4 text-white/70">{t.owner_department}</td>
+												<td className="px-6 py-4 text-white/70">{t.active_users_count ?? 0}</td>
+												<td className="px-6 py-4 text-white/70">{formatEUR(t.monthly_cost ?? 0)}</td>
+												<td className="px-6 py-4 text-white/70">{t.category}</td>
+												<td className="px-6 py-4 text-white/70 whitespace-nowrap min-w-32">{formatShortDate(t.updated_at)}</td>
+
+												<td className="px-6 py-4 text-white/70">
+													<div className="max-w-sm truncate">{t.description}</div>
+												</td>
+
+												<td className={`sticky right-0 relative px-6 py-4 text-right bg-zinc-950 ${isOpen ? "z-50" : "z-20"}`}>
+													<button
+														type="button"
+														className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:bg-white/10"
+														aria-label="Row actions"
+														aria-expanded={isOpen}
+														onClick={() => setOpenMenuId((prev) => (prev === t.id ? null : t.id))}
+													>
+														<MoreHorizontal className="h-4 w-4" />
+													</button>
+
+													{isOpen ? (
+														<div className="absolute right-6 top-14 z-50 w-36 rounded-xl border border-white/10 bg-zinc-950 p-1 shadow-lg backdrop-blur">
+															<button
+																type="button"
+																className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+																onClick={() => setOpenMenuId(null)}
+															>
+																View
+															</button>
+															<button
+																type="button"
+																className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+																onClick={() => setOpenMenuId(null)}
+															>
+																Edit
+															</button>
+															<button
+																type="button"
+																className="w-full rounded-lg px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 hover:text-white"
+																onClick={() => {
+																	toggleStatusMutation.mutate(t)
+																	setOpenMenuId(null)
+																}}
+															>
+																Enable / Disable
+															</button>
+														</div>
+													) : null}
+												</td>
+											</tr>
+										)
+									})
 								: null}
 						</tbody>
 					</table>
