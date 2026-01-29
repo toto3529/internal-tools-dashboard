@@ -12,6 +12,7 @@ import PaginationFooter from "../components/ui/PaginationFooter"
 import { useDepartments } from "../hooks/useDepartments"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiPatch } from "../utils/api"
+import { DEFAULT_PAGE_SIZE } from "../styles/constants"
 
 type SortKey = "name" | "monthly_cost" | "active_users_count"
 type SortDir = "asc" | "desc"
@@ -48,7 +49,7 @@ export default function Tools() {
 		maxCost: maxCost.trim() ? Number(maxCost) : undefined,
 	})
 
-	const pageSize = 10
+	const pageSize = DEFAULT_PAGE_SIZE
 	const [page, setPage] = useState(1)
 
 	const [sortKey, setSortKey] = useState<SortKey>("monthly_cost")
@@ -91,10 +92,6 @@ export default function Tools() {
 	function toggleSelect(id: number) {
 		setOpenMenuId(null)
 		setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-	}
-
-	function isSelected(id: number) {
-		return selectedIds.includes(id)
 	}
 
 	function toggleSelectAll(ids: number[]) {
@@ -242,8 +239,8 @@ export default function Tools() {
 						</div>
 					</div>
 				</div>
-				{/* Bulk actions slot — reserved space (desktop/tablet only) */}
-				<div className="hidden md:block h-[72px]">
+
+				<div className="hidden md:block h-18">
 					<div
 						className={[
 							"flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-6 py-4 transition-all",

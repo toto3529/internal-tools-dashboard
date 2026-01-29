@@ -8,6 +8,7 @@ import { formatEUR } from "../../utils/format"
 import TableStateRow from "../ui/TableStateRow"
 import ToolIcon from "../ui/ToolIcon"
 import PaginationFooter from "../ui/PaginationFooter"
+import { DEFAULT_PAGE_SIZE } from "../../styles/constants"
 
 type ToolStatus = "active" | "expiring" | "unused"
 
@@ -37,8 +38,9 @@ function mapToolToRow(t: Tool): RecentToolRow {
 }
 
 export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: string }) {
-	const toolsState = useRecentTools(8)
-	const pageSize = 10
+	const RECENT_TOOLS_LIMIT = 8
+	const toolsState = useRecentTools(RECENT_TOOLS_LIMIT)
+	const pageSize = DEFAULT_PAGE_SIZE
 	const [page, setPage] = useState(1)
 
 	const [sortKey, setSortKey] = useState<SortKey>("monthlyCost")
@@ -246,10 +248,10 @@ export default function RecentToolsTable({ searchQuery = "" }: { searchQuery?: s
 							? pagedRows.map((row) => {
 									return (
 										<tr key={row.id} className="border-b border-white/10 hover:bg-white/5">
-											<td className="px-6 py-4">
-												<div className="flex items-center gap-3">
+											<td className="px-6 py-4 max-w-105">
+												<div className="flex items-center gap-3 min-w-0">
 													<ToolIcon name={row.name} iconUrl={row.iconUrl} />
-													<div className="min-w-0">
+													<div className="min-w-0 flex-1">
 														<div className="truncate font-medium text-white">{row.name}</div>
 													</div>
 												</div>
