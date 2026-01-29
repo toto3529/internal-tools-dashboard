@@ -5,7 +5,7 @@ import StatusBadge from "../components/ui/StatusBadge"
 import { MoreHorizontal } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import type { Tool } from "../utils/types"
-import { formatEUR } from "../utils/format"
+import { formatEUR, formatShortDate } from "../utils/format"
 import TableStateRow from "../components/ui/TableStateRow"
 import ToolIcon from "../components/ui/ToolIcon"
 import PaginationFooter from "../components/ui/PaginationFooter"
@@ -48,6 +48,7 @@ export default function Tools() {
 
 	useEffect(() => {
 		setPage(1)
+		setOpenMenuId(null)
 	}, [searchQuery, sortKey, sortDir])
 
 	const filteredTools = useMemo(() => {
@@ -200,6 +201,7 @@ export default function Tools() {
 										{sortKey === "name" ? <span className="text-white/60">{sortDir === "asc" ? "↑" : "↓"}</span> : null}
 									</button>
 								</th>
+								<th className="px-6 py-3 font-medium">Description</th>
 								<th className="px-6 py-3 font-medium">Category</th>
 								<th className="px-6 py-3 font-medium">Department</th>
 								<th className="px-6 py-3 font-medium">
@@ -224,6 +226,7 @@ export default function Tools() {
 										{sortKey === "monthly_cost" ? <span className="text-white/60">{sortDir === "asc" ? "↑" : "↓"}</span> : null}
 									</button>
 								</th>
+								<th className="px-6 py-3 font-medium">Last update</th>
 								<th className="px-6 py-3 font-medium">Status</th>
 								<th className="px-6 py-3 text-right font-medium">Actions</th>
 							</tr>
@@ -247,11 +250,14 @@ export default function Tools() {
 													</div>
 												</div>
 											</td>
-
+											<td className="px-6 py-4 text-white/70">
+												<div className="max-w-sm truncate">{t.description}</div>
+											</td>
 											<td className="px-6 py-4 text-white/70">{t.category}</td>
 											<td className="px-6 py-4 text-white/70">{t.owner_department}</td>
 											<td className="px-6 py-4 text-white/70">{t.active_users_count ?? 0}</td>
 											<td className="px-6 py-4 text-white/70">{formatEUR(t.monthly_cost ?? 0)}</td>
+											<td className="px-6 py-4 text-white/70">{formatShortDate(t.updated_at)}</td>
 
 											<td className="px-6 py-4">
 												<StatusBadge status={t.status} />
