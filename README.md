@@ -19,6 +19,9 @@ Install dependencies and start the development server using your preferred packa
 
 ```bash
 npm install
+```
+
+```bash
 npm run dev
 ```
 
